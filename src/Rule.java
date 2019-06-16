@@ -54,12 +54,12 @@ public class Rule implements Serializable {
 	}
 	
 	public boolean sameName(Rule rule) {
-		if (rule.name == name) return true;
+		if (rule.name.equals(name)) return true;
 		return false;
 	}
 	
 	public boolean sameName(String rule) {
-		if (rule == name) return true;
+		if (rule.equals(name)) return true;
 		return false;
 	}
 	
