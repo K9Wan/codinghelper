@@ -164,11 +164,11 @@ public class MainGUI extends JFrame implements ActionListener, KeyListener, Mous
 		shortcut[3][6] = new Key(false, false, true, KeyEvent.VK_SPACE);
 		shortcut[3][7] = new Key(true, false, false, KeyEvent.VK_DELETE);
 		
-		shortcut[4][0] = new Key(false, false, true, KeyEvent.VK_R);
-		shortcut[4][1] = new Key(false, false, false, KeyEvent.VK_F4);
-		shortcut[4][2] = new Key(false, false, false, KeyEvent.VK_F2);
+		shortcut[5][0] = new Key(false, false, true, KeyEvent.VK_R);
+		shortcut[5][1] = new Key(false, false, false, KeyEvent.VK_F4);
+		shortcut[5][2] = new Key(false, false, false, KeyEvent.VK_F2);
 		
-		shortcut[5][0] = new Key(true, true, false, KeyEvent.VK_H);
+		shortcut[6][0] = new Key(true, true, false, KeyEvent.VK_H);
 		int i, j;
 		for (i = 0; i < shortcut.length; i++) {
 			for (j = 0; j < shortcut[i].length; j++) {
