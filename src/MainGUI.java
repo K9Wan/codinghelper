@@ -6,9 +6,6 @@ import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.GridLayout;
 import java.awt.Insets;
-import java.awt.Toolkit;
-import java.awt.datatransfer.Clipboard;
-import java.awt.datatransfer.StringSelection;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -30,7 +27,6 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 
-import javax.swing.Action;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
@@ -46,6 +42,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
 import javax.swing.border.CompoundBorder;
 import javax.swing.text.DefaultEditorKit;
@@ -68,9 +65,21 @@ public class MainGUI extends JFrame implements ActionListener, KeyListener, Mous
 	private String selectedText;
 	private JTextComponent selectedArea;
 	private boolean isSynced;
+	private boolean shift;
+	private boolean ctrl;
+	private boolean alt;
 	
 	private JMenuBar toolBar;
 	private ArrayList<Rule> rules;
+	private Key shortcut[][] = {
+			{null,null,null,null,null,null,null,null,null,null,null,null},
+			{null,null,null,null,null,null,null,null,null,null,null},
+			{null,null,null,null},
+			{null,null,null,null,null,null,null,null},
+			{null,null,null,null},
+			{null,null,null},
+			{null,null}
+		};
 	
 	private JPanel mainPane;
 		private JPanel transPane;
@@ -110,10 +119,63 @@ public class MainGUI extends JFrame implements ActionListener, KeyListener, Mous
 		selectedText = "";
 		selectedArea = psuedoCArea;
 		isSynced = false;
+		shift = false;
+		ctrl = false;
+		alt = false;
 		
 		toolBar = new JMenuBar();
 		rules = new ArrayList<Rule>();
+		shortcut[0][0] = new Key(true, true, false, KeyEvent.VK_N);
+		shortcut[0][1] = new Key(false, true, false, KeyEvent.VK_O);
+		shortcut[0][2] = new Key(true, true, false, KeyEvent.VK_O);
+		shortcut[0][3] = new Key(false, true, false, KeyEvent.VK_S);
+		shortcut[0][4] = new Key(true, true, false, KeyEvent.VK_S);
+		shortcut[0][5] = new Key(true, true, true, KeyEvent.VK_N);
+		shortcut[0][6] = new Key(false, true, true, KeyEvent.VK_O);
+		shortcut[0][7] = new Key(true, true, true, KeyEvent.VK_O);
+		shortcut[0][8] = new Key(false, true, true, KeyEvent.VK_S);
+		shortcut[0][9] = new Key(true, true, true, KeyEvent.VK_S);
+		shortcut[0][10] = new Key(true, false, false, KeyEvent.VK_F5);
+		shortcut[0][11] = new Key(true, false, false, KeyEvent.VK_ESCAPE);
 		
+		shortcut[1][0] = new Key(false, true, false, KeyEvent.VK_Z);
+		shortcut[1][1] = new Key(true, true, false, KeyEvent.VK_Z);
+		shortcut[1][2] = new Key(false, true, false, KeyEvent.VK_X);
+		shortcut[1][3] = new Key(false, true, false, KeyEvent.VK_C);
+		shortcut[1][4] = new Key(false, true, false, KeyEvent.VK_V);
+		shortcut[1][5] = new Key(false, false, false, KeyEvent.VK_DELETE);
+		shortcut[1][6] = new Key(false, true, false, KeyEvent.VK_A);
+		shortcut[1][7] = new Key(false, true, false, KeyEvent.VK_F);
+		shortcut[1][8] = new Key(false, true, false, KeyEvent.VK_H);
+		shortcut[1][9] = new Key(false, true, false, KeyEvent.VK_RIGHT);
+		shortcut[1][10] = new Key(false, true, false, KeyEvent.VK_LEFT);
+		
+		shortcut[2][0] = new Key(false, true, false, KeyEvent.VK_ENTER);
+		shortcut[2][1] = new Key(true, true, false, KeyEvent.VK_ENTER);
+		shortcut[2][2] = new Key(false, false, true, KeyEvent.VK_S);
+		shortcut[2][3] = new Key(false, false, false, KeyEvent.VK_F6);
+		
+		shortcut[3][0] = new Key(false, false, true, KeyEvent.VK_E);
+		shortcut[3][1] = new Key(false, false, true, KeyEvent.VK_ENTER);
+		shortcut[3][2] = new Key(false, false, true, KeyEvent.VK_HOME);
+		shortcut[3][3] = new Key(false, false, true, KeyEvent.VK_END);
+		shortcut[3][4] = new Key(false, false, true, KeyEvent.VK_DOWN);
+		shortcut[3][5] = new Key(false, false, true, KeyEvent.VK_UP);
+		shortcut[3][6] = new Key(false, false, true, KeyEvent.VK_SPACE);
+		shortcut[3][7] = new Key(true, false, false, KeyEvent.VK_DELETE);
+		
+		shortcut[4][0] = new Key(false, false, true, KeyEvent.VK_R);
+		shortcut[4][1] = new Key(false, false, false, KeyEvent.VK_F4);
+		shortcut[4][2] = new Key(false, false, false, KeyEvent.VK_F2);
+		
+		shortcut[5][0] = new Key(true, true, false, KeyEvent.VK_H);
+		int i, j;
+		for (i = 0; i < shortcut.length; i++) {
+			for (j = 0; j < shortcut[i].length; j++) {
+				if (shortcut[i][j] != null) continue;
+				shortcut[i][j] = new Key();
+			}
+		}
 		mainPane = new JPanel();
 			transPane = new JPanel();
 				psuedoCArea = new JTextArea(5, 5);
@@ -136,6 +198,21 @@ public class MainGUI extends JFrame implements ActionListener, KeyListener, Mous
 		fc.setCurrentDirectory(new File(System.getProperty("user.dir")));
 		psuedoCArea.addKeyListener(this);
 		normalCArea.addKeyListener(this);
+		ruleNameArea.addKeyListener(this);
+		ruleInArea.addKeyListener(this);
+		ruleOutArea.addKeyListener(this);
+		
+		psuedoCArea.addMouseListener(this);
+		normalCArea.addMouseListener(this);
+		ruleNameArea.addMouseListener(this);
+		ruleInArea.addMouseListener(this);
+		ruleOutArea.addMouseListener(this);
+		
+		psuedoCArea.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_H, KeyEvent.CTRL_DOWN_MASK, false), "none");
+		normalCArea.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_H, KeyEvent.CTRL_DOWN_MASK, false), "none");
+		ruleNameArea.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_H, KeyEvent.CTRL_DOWN_MASK, false), "none");
+		ruleOutArea.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_H, KeyEvent.CTRL_DOWN_MASK, false), "none");
+		ruleInArea.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_H, KeyEvent.CTRL_DOWN_MASK, false), "none");
 		
 		setTitle("EasyC - Psuedo-C Transpiler");
 		setSize(800, 600);
@@ -147,17 +224,17 @@ public class MainGUI extends JFrame implements ActionListener, KeyListener, Mous
 				{new JMenuItem("New File") ,new JMenuItem("Open File") ,new JMenuItem("Open File from URL...") ,new JMenuItem("Save File") ,new JMenuItem("Save File as...") ,new JMenuItem("New Rule") ,new JMenuItem("Open Rule") ,new JMenuItem("Open Rule from URL...") ,new JMenuItem("Save Rule") ,new JMenuItem("Save Rule as...") ,new JMenuItem("Restart Program") ,new JMenuItem("Exit Program")}, 
 				{new JMenuItem("Undo") ,new JMenuItem("Redo") ,new JMenuItem(new DefaultEditorKit.CutAction()) ,new JMenuItem(new DefaultEditorKit.CopyAction()) ,new JMenuItem(new DefaultEditorKit.PasteAction()) ,new JMenuItem("Delete") ,new JMenuItem("Select All") ,new JMenuItem("Find") ,new JMenuItem("Replace") ,new JMenuItem("Select Next") ,new JMenuItem("Select Previous")},
 				{new JMenuItem("Transpile") ,new JMenuItem("Reverse Transpile") ,new JMenuItem("Sync/Desync..."), new JMenuItem("Swap Texts")},
-				{new JMenuItem("Edit Selected Rule") ,new JMenuItem("Confirm Selected Rule") ,new JMenuItem("Select Next Rule") ,new JMenuItem("Select Previous Rule"), new JMenuItem("Activate/Deactivate Selected Rule") ,new JMenuItem("Delete Selected Rule")},
+				{new JMenuItem("Edit Selected Rule") ,new JMenuItem("Confirm Selected Rule") ,new JMenuItem("Select First Rule"),new JMenuItem("Select Last Rule"), new JMenuItem("Select Next Rule") ,new JMenuItem("Select Previous Rule"), new JMenuItem("Activate/Deactivate Selected Rule") ,new JMenuItem("Delete Selected Rule")},
 				{new JMenuItem("Shortcuts..."), new JMenuItem("Coloring"), new JMenuItem("Fonts"), new JMenuItem("Features")},
 				{new JMenuItem("Show/Hide Rule Tab"), new JMenuItem("Fullscreen/Windowed"), new JMenuItem("Show/Hide Toolbar")},
 				{new JMenuItem("Help"), new JMenuItem("About")}
 				};
-		int i = 0; int j = 0;
+		i = 0; j = 0;
 		for (JMenuItem list[]: tbitem) {
 			j = 0;
 			for (JMenuItem e: list) {
 				e.addActionListener(this);
-				e.setText(e.getActionCommand());
+				e.setText(e.getActionCommand() + ((shortcut[i][j] == null) ? "" : " " + shortcut[i][j].toString()));
 				e.setActionCommand("action." + tb[i].getText().toLowerCase() + "." + j);
 				tb[i].add(e);
 				j++;
@@ -178,6 +255,7 @@ public class MainGUI extends JFrame implements ActionListener, KeyListener, Mous
 		psuedoCScroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
 		normalCScroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 		normalCScroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+		
 		transButtonWrapper.setLayout(new FlowLayout());
 		
 		updateRatios(mainPane, psuedoCScroll, normalCScroll, transButtonWrapper);
@@ -366,6 +444,48 @@ public class MainGUI extends JFrame implements ActionListener, KeyListener, Mous
 		public Rule getRule() { return rule; }
 		
 		public void setRule(Rule rule) { this.rule = rule; }
+	}
+	
+	private class Key {
+		private boolean shift;
+		private boolean ctrl;
+		private boolean alt;
+		private int key;
+		
+		public Key() {
+			this(false, false, false, 5000);
+		}
+		
+		public Key(int key) {
+			this(false, false, false, key);
+		}
+		
+		public Key(int n, int key) {
+			this(((n & 1) != 0), ((n & 2) != 0), ((n & 4) != 0), key);
+		}
+		
+		public Key(boolean shift, boolean ctrl, boolean alt, int key) {
+			setShift(shift);
+			setCtrl(ctrl);
+			setAlt(alt);
+			setKey(key);
+		}
+		
+		public void setShift(boolean shift) { this.shift = shift; }
+		public void setCtrl(boolean ctrl) { this.ctrl = ctrl; }
+		public void setAlt(boolean alt) { this.alt = alt; }
+		public void setKey(int key) { this.key = key; }
+		
+		public boolean getShift() { return shift; }
+		public boolean getCtrl() { return ctrl; }
+		public boolean getAlt() { return alt; }
+		public int getKey() { return key; }
+		
+		@Override
+		public String toString() {
+			if (getKey() == 5000) return "";
+			return "(" + (getCtrl() ? "Ctrl+" : "") + (getShift() ? "Shift+" : "") + (getAlt() ? "Alt+" : "") + KeyEvent.getKeyText(getKey()) + ")";
+		}
 	}
 	
 	private void updateRules() {
@@ -574,13 +694,17 @@ public class MainGUI extends JFrame implements ActionListener, KeyListener, Mous
 				}
 				break;
 			case 10:
-				remove(toolBar);
-				remove(mainPane);
-				initiate();
-				revalidate();
+				if (JOptionPane.showConfirmDialog(this, "TAre you sure?", "Restart Program", JOptionPane.WARNING_MESSAGE) == JOptionPane.YES_OPTION) {
+					remove(toolBar);
+					remove(mainPane);
+					initiate();
+					revalidate();
+				}
 				break;
 			case 11:
-				dispatchEvent(new WindowEvent(this, WindowEvent.WINDOW_CLOSING));
+				if (JOptionPane.showConfirmDialog(this, "Are you sure?", "Exit Program", JOptionPane.WARNING_MESSAGE) == JOptionPane.YES_OPTION) {
+					dispatchEvent(new WindowEvent(this, WindowEvent.WINDOW_CLOSING));
+				}
 				break;
 			default:
 				System.err.println("Unrecognised " + actions[1] + " subaction Recieved: " + action);
@@ -628,6 +752,7 @@ public class MainGUI extends JFrame implements ActionListener, KeyListener, Mous
 		case "rules":
 			switch (subaction) {
 			case 0:
+				if (rules.isEmpty()) break;
 				try {
 					int listnum = Integer.parseInt(actions[3]);
 					ruleNameArea.setText(rules.get(listnum).getName());
@@ -667,39 +792,60 @@ public class MainGUI extends JFrame implements ActionListener, KeyListener, Mous
 				updateRules();
 				break;
 			case 2:
+				if (rules.isEmpty()) break;
+				selectedRule = 0;
+				updateRules();
+				break;
+			case 3:
+				if (rules.isEmpty()) break;
+				selectedRule = rules.size() - 1;
+				updateRules();
+				break;
+			case 4:
+				if (rules.isEmpty()) break;
 				try {
 					selectedRule = Integer.parseInt(actions[3]);
 				} catch (NumberFormatException err) {
 					System.err.println("Unrecognised Rule number Recieved: " + actions[3]);
-				} catch (ArrayIndexOutOfBoundsException err) {
+				} catch (IndexOutOfBoundsException err) {
+					if (rules.isEmpty()) break;
 					selectedRule += 1;
 				}
 				if (0 > selectedRule) selectedRule = 0;
 				else if (selectedRule >= rules.size()) selectedRule = rules.size() - 1;
 				updateRules();
 				break;
-			case 3:
+			case 5:
+				if (rules.isEmpty()) break;
 				selectedRule -= 1;
 				if (0 > selectedRule) selectedRule = 0;
 				else if (selectedRule >= rules.size()) selectedRule = rules.size() - 1;
 				updateRules();
 				break;
-			case 4:
+			case 6:
+				if (rules.isEmpty()) break;
 				try {
 					int listnum = Integer.parseInt(actions[3]);
 					rules.get(listnum).setActive(!(rules.get(listnum).getActive()));
-					updateRules();
 				} catch (NumberFormatException err) {
 					System.err.println("Unrecognised Rule number Recieved: " + actions[3]);
+				} catch (IndexOutOfBoundsException err) {
+					rules.get(selectedRule).setActive(!(rules.get(selectedRule).getActive()));
 				}
+				updateRules();
 				break;
-			case 5:
+			case 7:
+				if (rules.isEmpty()) break;
 				try {
 					rules.remove(Integer.parseInt(actions[3]));
-					updateRules();
 				} catch (NumberFormatException err) {
 					System.err.println("Unrecognised Rule number Recieved: " + actions[3]);
+				} catch (IndexOutOfBoundsException err) {
+					rules.remove(selectedRule);
+					selectedRule--;
+					if (selectedRule < 0) selectedRule = 0;
 				}
+				updateRules();
 				break;
 			default:
 				System.err.println("Unrecognised " + actions[1] + " subaction Recieved: " + action);
@@ -759,11 +905,31 @@ public class MainGUI extends JFrame implements ActionListener, KeyListener, Mous
 	
 	@Override
 	public void keyPressed(KeyEvent e) {
+		if (e.getKeyCode() == KeyEvent.VK_SHIFT) shift = true;
+		else if (e.getKeyCode() == KeyEvent.VK_CONTROL) ctrl = true;
+		else if (e.getKeyCode() == KeyEvent.VK_ALT) alt = true;
+		String menu[] = {"file", "edit", "transpiler", "rules", "setting", "window", "help"};
+		// SHORTCUTS
+		int i = 0, j;
+		for (Key list[]: shortcut) {
+			j = 0;
+			for (Key d: list) {
+				if (d == null) continue;
+				if (d.getAlt() == alt && d.getCtrl() == ctrl && d.getShift() == shift && d.getKey() == e.getKeyCode()) {
+					this.actionPerformed(new ActionEvent(this, 1, "action." + menu[i] + "." + String.valueOf(j)));
+				}
+				j++;
+			}
+			i++;
+		}
 		// something related to undo/redo
 	}
 
 	@Override
 	public void keyReleased(KeyEvent e) {
+		if (e.getKeyCode() == KeyEvent.VK_SHIFT) shift = false;
+		else if (e.getKeyCode() == KeyEvent.VK_CONTROL) ctrl = false;
+		else if (e.getKeyCode() == KeyEvent.VK_ALT) alt = false;
 		// something related to undo/redo
 	}
 
