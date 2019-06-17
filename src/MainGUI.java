@@ -1,4 +1,3 @@
-package com.prod.project;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -237,6 +236,7 @@ public class MainGUI extends JFrame implements ActionListener, KeyListener, Mous
 				e.setText(e.getActionCommand() + ((shortcut[i][j] == null) ? "" : " " + shortcut[i][j].toString()));
 				e.setActionCommand("action." + tb[i].getText().toLowerCase() + "." + j);
 				tb[i].add(e);
+				e.setAccelerator(shortcut[i][j].toKeyStroke());
 				j++;
 			}
 			tb[i].addActionListener(this);
@@ -247,6 +247,8 @@ public class MainGUI extends JFrame implements ActionListener, KeyListener, Mous
 		tbitem[1][3].setText("Copy");
 		tbitem[1][4].setText("Paste");
 		add(toolBar, BorderLayout.NORTH);
+		
+		//tbitem[2][3].setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_D, KeyEvent.SHIFT_DOWN_MASK|KeyEvent.ALT_DOWN_MASK|KeyEvent.CTRL_DOWN_MASK));
 		
 		mainPane.setLayout(new BoxLayout(mainPane, BoxLayout.LINE_AXIS));
 		transPane.setLayout(new BoxLayout(transPane, BoxLayout.PAGE_AXIS));
@@ -271,13 +273,16 @@ public class MainGUI extends JFrame implements ActionListener, KeyListener, Mous
 		transButton.setActionCommand("action.transpiler.0");
 		untransButton.setActionCommand("action.transpiler.1");
 		swapButton.setActionCommand("action.transpiler.3");
+		transButton.setToolTipText("trans");
+		untransButton.setToolTipText("untrans");
+		swapButton.setToolTipText("swap");
 		
 		transButtonWrapper.add(transButton);
 		transButtonWrapper.add(untransButton);
 		transButtonWrapper.add(swapButton);
 		
-		psuedoCArea.setText("EasyC code goes here...");
-		normalCArea.setText("ordinary C code goes here...");
+		psuedoCArea.setToolTipText("EasyC code goes here...");
+		normalCArea.setToolTipText("ordinary C code goes here...");
 		
 		transPane.add(Box.createRigidArea(new Dimension(5, 5)));
 		transPane.add(psuedoCScroll);
@@ -300,10 +305,11 @@ public class MainGUI extends JFrame implements ActionListener, KeyListener, Mous
 		JButton ruleConfirmButton = new JButton("✓");
 		ruleConfirmButton.addActionListener(this);
 		ruleConfirmButton.setActionCommand("action.rules.1");
+		ruleConfirmButton.setToolTipText("rule confirm");
 		
-		ruleNameArea.setText("Rule name here");
-		ruleInArea.setText("What to detect here");
-		ruleOutArea.setText("What to turn into here");
+		ruleNameArea.setToolTipText("Rule name here");
+		ruleInArea.setToolTipText("What to detect here");
+		ruleOutArea.setToolTipText("What to turn into here");
 		
 		ruleButtonWrapper.add(ruleConfirmButton);
 		ruleInScroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
@@ -485,6 +491,10 @@ public class MainGUI extends JFrame implements ActionListener, KeyListener, Mous
 		public String toString() {
 			if (getKey() == 5000) return "";
 			return "(" + (getCtrl() ? "Ctrl+" : "") + (getShift() ? "Shift+" : "") + (getAlt() ? "Alt+" : "") + KeyEvent.getKeyText(getKey()) + ")";
+		}
+		
+		public KeyStroke toKeyStroke() {
+			return KeyStroke.getKeyStroke(key, (shift?KeyEvent.SHIFT_DOWN_MASK:0)|(ctrl?KeyEvent.CTRL_DOWN_MASK:0)|(alt?KeyEvent.ALT_DOWN_MASK:0));
 		}
 	}
 	
@@ -904,7 +914,7 @@ public class MainGUI extends JFrame implements ActionListener, KeyListener, Mous
 	}
 	
 	@Override
-	public void keyPressed(KeyEvent e) {
+	public void keyPressed(KeyEvent e) {/*/
 		if (e.getKeyCode() == KeyEvent.VK_SHIFT) shift = true;
 		else if (e.getKeyCode() == KeyEvent.VK_CONTROL) ctrl = true;
 		else if (e.getKeyCode() == KeyEvent.VK_ALT) alt = true;
@@ -921,15 +931,15 @@ public class MainGUI extends JFrame implements ActionListener, KeyListener, Mous
 				j++;
 			}
 			i++;
-		}
+		}/*/
 		// something related to undo/redo
 	}
 
 	@Override
-	public void keyReleased(KeyEvent e) {
+	public void keyReleased(KeyEvent e) {/*/
 		if (e.getKeyCode() == KeyEvent.VK_SHIFT) shift = false;
 		else if (e.getKeyCode() == KeyEvent.VK_CONTROL) ctrl = false;
-		else if (e.getKeyCode() == KeyEvent.VK_ALT) alt = false;
+		else if (e.getKeyCode() == KeyEvent.VK_ALT) alt = false;/*/
 		// something related to undo/redo
 	}
 
