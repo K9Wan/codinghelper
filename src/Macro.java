@@ -4,12 +4,12 @@ import java.util.regex.*;	//Matcher MatchResult Pattern PatterSyntaxException
 public class Macro {
 	
 	public static ArrayList<Macro> macroList = new ArrayList<Macro>(30);
-	private String name;				//이름
-	private String input;				//인식할 패턴
-	private String output;		//바뀔 패턴
-	private boolean useRegex;			//정규표현식 사용여부
-	private String helpDoc;				//어떤 패턴을 어떻게 바꾸는지 알려줄 수 있는 독스트링을 위한 필드;
-	private boolean enabled;			//사용 여부
+	protected String name;				//이름
+	protected String input;				//인식할 패턴
+	protected String output;		//바뀔 패턴
+	protected boolean useRegex;			//정규표현식 사용여부
+	protected String helpDoc;				//어떤 패턴을 어떻게 바꾸는지 알려줄 수 있는 독스트링을 위한 필드;
+	protected boolean enabled;			//사용 여부
 	
 	public Macro(String original, String result, boolean useRegex) {
 		// TODO Auto-generated constructor stub
@@ -60,11 +60,11 @@ public class Macro {
 		return name;
 	}
 	
-	public String getPattern() {
+	public String getInput() {
 		return input;
 	}
 	
-	public String getPatternResult() {
+	public String getOutput() {
 		return output;
 	}
 	
@@ -84,11 +84,11 @@ public class Macro {
 		this.name = name;
 	}
 	
-	public void setPattern(String pattern) {
+	public void setInput(String pattern) {
 		this.input = pattern;
 	}
 	
-	public void setPatternResult(String pattern_result) {
+	public void setOutput(String pattern_result) {
 		this.output = pattern_result;
 	}
 	

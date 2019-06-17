@@ -1,18 +1,15 @@
-package com.prod.project;
 
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 /***
  * K9Wan's Custom Regex placeholder;
  * @author ProDuct0339
  */
-public class Rule implements Serializable {
-	
-	private String input;
-	private String output;
-	private String name;
-	private boolean active;
+public class Rule extends Macro implements Serializable {
+
+	public static ArrayList<Rule> ruleList = new ArrayList<Rule>(30);
 	
 	public Rule() {
 		this(getGeneratedName(), "input goes here", "output goes here");
@@ -27,20 +24,19 @@ public class Rule implements Serializable {
 	}
 	
 	public Rule(String name, String input, String output) {
-		setName(name);
-		setInput(input);
-		setOutput(output);
-		active = true;
+		this(name, input, output, false, "DcoString", true);
+	}
+
+	public Rule(String name, String input, String output, boolean useRegex, String helpDoc) {
+		super(name, input, output, useRegex, helpDoc, true);
 	}
 	
-	public String getName() { return name; }
-	public void setName(String name) { this.name = name; } 
-	public String getInput() { return input; }
-	public void setInput(String input) { this.input = input; }
-	public String getOutput() { return output; }
-	public void setOutput(String output) { this.output = output; }
-	public boolean getActive() { return active; }
-	public void setActive(boolean active) { this.active = active; }
+	public Rule(String name, String input, String output, boolean useRegex, String helpDoc, boolean active) {
+		super(name, input, output, useRegex, helpDoc, active);
+	}
+	
+	public boolean getActive() { return getEnabled(); }
+	public void setActive(boolean active) { setEnabled(active); }
 	
 	public static String getGeneratedName() {
 		SimpleDateFormat formatter= new SimpleDateFormat("yyMMddHHmmssSSS");  
@@ -67,10 +63,38 @@ public class Rule implements Serializable {
 	public boolean equals(Object obj) {
 		if (!(obj instanceof Rule)) return false;
 		Rule rule = (Rule)obj;
+		if (rule.useRegex != useRegex) return false;
 		boolean res = true;
 		if (rule.input != input) res = false;
 		if (rule.output != output) res = false;
 		if (rule.name != name) res = false;
 		return res;
+	}
+	
+	public static void predefine() {	//will be invoked when program starts;
+		ruleList.add(new Rule(
+				"malloc2d",
+				"(\\w+)( ?\\* ?\\* ?)(\\w+)( ?= ?)\\w?alloc\\[(\\w+)\\]\\[(\\w+)\\];",
+				"$1$2$3$4malloc($5*sizeof *$3 + $6*$5*sizeof **$3);\nfor(int i=0;i<$5;i++)\n{\n\t$3[i]$4($1 *)($3+$5)+i*n;\n}\n",
+				true,
+				"Use to allocate 2D array.\nExample: uint_8 ** matrix = malloc[6][cols];"));
+	}
+	
+	public static String execute(String str) {
+		for(Rule r:ruleList) {
+			if(r.enabled) {
+				str = r.replace(str);
+			}
+		}
+		return str;
+	}
+	
+	public static Rule findByName(String name) {
+		for(Rule r:ruleList) {
+			if(r.sameName(name)){
+				return r;
+			}
+		}
+		return null;
 	}
 }
