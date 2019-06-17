@@ -4,25 +4,25 @@ import java.util.regex.*;	//Matcher MatchResult Pattern PatterSyntaxException
 public class Macro {
 	
 	public static ArrayList<Macro> macroList = new ArrayList<Macro>(30);
-	private String name;				//ÀÌ¸§
-	private String pattern;				//ÀÎ½ÄÇÒ ÆĞÅÏ
-	private String pattern_result;		//¹Ù²ğ ÆĞÅÏ
-	private boolean useRegex;			//Á¤±ÔÇ¥Çö½Ä »ç¿ë¿©ºÎ
-	private String helpDoc;				//¾î¶² ÆĞÅÏÀ» ¾î¶»°Ô ¹Ù²Ù´ÂÁö ¾Ë·ÁÁÙ ¼ö ÀÖ´Â µ¶½ºÆ®¸µÀ» À§ÇÑ ÇÊµå;
-	private boolean enabled;			//»ç¿ë ¿©ºÎ
+	private String name;				//ì´ë¦„
+	private String input;				//ì¸ì‹í•  íŒ¨í„´
+	private String output;		//ë°”ë€” íŒ¨í„´
+	private boolean useRegex;			//ì •ê·œí‘œí˜„ì‹ ì‚¬ìš©ì—¬ë¶€
+	private String helpDoc;				//ì–´ë–¤ íŒ¨í„´ì„ ì–´ë–»ê²Œ ë°”ê¾¸ëŠ”ì§€ ì•Œë ¤ì¤„ ìˆ˜ ìˆëŠ” ë…ìŠ¤íŠ¸ë§ì„ ìœ„í•œ í•„ë“œ;
+	private boolean enabled;			//ì‚¬ìš© ì—¬ë¶€
 	
 	public Macro(String original, String result, boolean useRegex) {
 		// TODO Auto-generated constructor stub
-		this.pattern = original;
-		this.pattern_result = result;
+		this.input = original;
+		this.output = result;
 		this.useRegex = useRegex;
 	}
 	
 	public Macro(String name, String original, String result, boolean useRegex, String helpDoc, boolean enabled) {
 		// TODO Auto-generated constructor stub
 		this.name = name;
-		this.pattern = original;
-		this.pattern_result = result;
+		this.input = original;
+		this.output = result;
 		this.useRegex = useRegex;
 		this.helpDoc = helpDoc;
 		this.enabled = enabled;
@@ -49,10 +49,10 @@ public class Macro {
 	
 	public String replace(String targetStr) {
 		if(useRegex) {
-			return targetStr.replaceAll(pattern, pattern_result);
+			return targetStr.replaceAll(input, output);
 		}
 		else {
-			return targetStr.replace(pattern, pattern_result);
+			return targetStr.replace(input, output);
 		}
 	}
 	
@@ -61,11 +61,11 @@ public class Macro {
 	}
 	
 	public String getPattern() {
-		return pattern;
+		return input;
 	}
 	
 	public String getPatternResult() {
-		return pattern_result;
+		return output;
 	}
 	
 	public boolean getUseRegex() {
@@ -85,11 +85,11 @@ public class Macro {
 	}
 	
 	public void setPattern(String pattern) {
-		this.pattern = pattern;
+		this.input = pattern;
 	}
 	
 	public void setPatternResult(String pattern_result) {
-		this.pattern_result = pattern_result;
+		this.output = pattern_result;
 	}
 	
 	public void setUseRegex(boolean useRegex) {
@@ -105,7 +105,7 @@ public class Macro {
 	}
 	
 	public String info() {
-		return "name: "+name+"\nhelp:\n"+helpDoc+"\nenabled: "+(enabled?"enabled":"disabled")+"\nfrom:\n"+pattern+"\nto:\n"+pattern_result+"\nuse regex: "+useRegex;
+		return "name: "+name+"\nhelp:\n"+helpDoc+"\nenabled: "+(enabled?"enabled":"disabled")+"\nfrom:\n"+input+"\nto:\n"+output+"\nuse regex: "+useRegex;
 	}
 	
 	public static void predefine() {	//will be invoked when program starts;
@@ -141,38 +141,38 @@ public class Macro {
 		predefine();
 	}
 	
-	private static void test() {	//will be used to see how regex and replacement works-Å×½ºÆ®¿ë;
+	private static void test() {	//will be used to see how regex and replacement works-í…ŒìŠ¤íŠ¸ìš©;
 		Macro matrix = new Macro(
 				"(\\w+)( ?\\* ?\\* ?)(\\w+)( ?= ?)\\w?alloc\\[(\\w+)\\]\\[(\\w+)\\];",
 				"$1$2$3$4malloc($5*sizeof *$3 + $6*$5*sizeof **$3);\nfor(int i=0;i<$5;i++)\n{\n\t$3[i]$4($1 *)($3+$5)+i*n;\n}\n",
 				true);
 		String test = "_Bool * * cases = malloc[two_n][n];aaaa\n_Bool * * cases = malloc[two_n][n];";
-		Pattern matrixPattern = Pattern.compile(matrix.pattern);	//make Pattern object;
+		Pattern matrixPattern = Pattern.compile(matrix.input);	//make Pattern object;
 		System.out.println(matrixPattern);		//will print regex string that was used to make Pattern object;
 		Matcher m = matrixPattern.matcher(test);
-		System.out.println(m.replaceFirst(matrix.pattern_result));	//replace only one pattern
-		String result = m.replaceAll(matrix.pattern_result);	
-		String result2 = test.replaceAll(matrix.pattern, matrix.pattern_result);
+		System.out.println(m.replaceFirst(matrix.output));	//replace only one pattern
+		String result = m.replaceAll(matrix.output);	
+		String result2 = test.replaceAll(matrix.input, matrix.output);
 		
 		
 		//System.out.println(Matcher.quoteReplacement(matrix.pattern)+'\n'+matrix.pattern);	//ignore
-		//System.out.println(result+"\n\n"+String.format("%s", result2));					//¹«½Ã(±×³É Å×½ºÆ®¿ë);
+		//System.out.println(result+"\n\n"+String.format("%s", result2));					//ë¬´ì‹œ(ê·¸ëƒ¥ í…ŒìŠ¤íŠ¸ìš©);
 		
 		
-		System.out.println(result.equals(result2));		//"""result¿Í result2ÀÇ °á°ú°¡ °°À½(true Ãâ·ÂÇÔ)"""
+		System.out.println(result.equals(result2));		//"""resultì™€ result2ì˜ ê²°ê³¼ê°€ ê°™ìŒ(true ì¶œë ¥í•¨)"""
 		
 
-		/*/¹«½Ã(±×³É Å×½ºÆ®);
+		/*/ë¬´ì‹œ(ê·¸ëƒ¥ í…ŒìŠ¤íŠ¸);
 		String test2 = "aaaa"; String[] s = {"aa\naa","aa\\naa","aa\\\naa","aa\\\\naa"};
 		for(String n:s) {
 			System.out.println(test2.replaceAll("a+", n)+"\t---");
 		}
 		/*/
-		System.out.println(Pattern.compile(matrix.pattern).matcher(test).replaceAll(matrix.pattern_result).equals(test.replaceAll(matrix.pattern, matrix.pattern_result)));
-		//result result2¸¦ ÇÑÁÙ·Î ºñ±³
+		System.out.println(Pattern.compile(matrix.input).matcher(test).replaceAll(matrix.output).equals(test.replaceAll(matrix.input, matrix.output)));
+		//result result2ë¥¼ í•œì¤„ë¡œ ë¹„êµ
 		//Pattern.compile(regex).matcher(target str).replaceAll(replace regex)) 
 		String str = "ababerbbabbb";
-		System.out.println(str.replace("ab", "cc"));	//regex ¾ø´Â ´Ü¼ø ´ëÃ¼; useRegex field°¡ falseÀÏ¶§ »ç¿ëµÉ ¿¹Á¤
+		System.out.println(str.replace("ab", "cc"));	//regex ì—†ëŠ” ë‹¨ìˆœ ëŒ€ì²´; useRegex fieldê°€ falseì¼ë•Œ ì‚¬ìš©ë  ì˜ˆì •
 		System.out.println(matrix.replace(test));
 		Macro abcc = new Macro("ab","cc");
 		System.out.println(abcc.replace(str));
