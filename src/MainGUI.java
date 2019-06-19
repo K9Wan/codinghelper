@@ -279,9 +279,13 @@ public class MainGUI extends JFrame implements ActionListener, KeyListener, Mous
 		updateShows();
 		
 		JButton transButton = new JButton("▼");
+		transButton.setToolTipText("Transpile");
 		JButton untransButton = new JButton("△");
+		untransButton.setToolTipText("Untranspile");
 		JButton expandButton = new JButton("⇩");
+		expandButton.setToolTipText("Expand");
 		JButton swapButton = new JButton("↑↓");
+		swapButton.setToolTipText("Swap");
 		
 		transButton.addActionListener(this);
 		untransButton.addActionListener(this);
@@ -291,10 +295,6 @@ public class MainGUI extends JFrame implements ActionListener, KeyListener, Mous
 		untransButton.setActionCommand("action.transpiler.1");
 		expandButton.setActionCommand("action.transpiler.2");
 		swapButton.setActionCommand("action.transpiler.4");
-		transButton.setToolTipText("trans");
-		untransButton.setToolTipText("untrans");
-		expandButton.setToolTipText("expand: by replacing #define with #expand");
-		swapButton.setToolTipText("swap");
 		
 		transButtonWrapper.add(transButton);
 		transButtonWrapper.add(untransButton);
@@ -325,16 +325,16 @@ public class MainGUI extends JFrame implements ActionListener, KeyListener, Mous
 		JButton ruleConfirmButton = new JButton("✓");
 		ruleConfirmButton.addActionListener(this);
 		ruleConfirmButton.setActionCommand("action.rules.1");
-		ruleConfirmButton.setToolTipText("rule confirm");
+		ruleConfirmButton.setToolTipText("Confirm this Rule");
 		
 		//ruleUseRegexToggleButton = new JToggleButton("This uses regex");
 		ruleUseRegexToggleButton = new JCheckBox("This uses regex");
-		ruleUseRegexToggleButton.setToolTipText("check this if your rule uses regular expression");
+		ruleUseRegexToggleButton.setToolTipText("Check this if your rule uses Regular Expression");
 		
-		ruleNameArea.setToolTipText("Rule name here");
-		ruleInArea.setToolTipText("What to detect here");
-		ruleOutArea.setToolTipText("What to turn into here");
-		ruleDocArea.setToolTipText("DocString for this rule here");
+		ruleNameArea.setToolTipText("Rule name");
+		ruleInArea.setToolTipText("What to detect...");
+		ruleOutArea.setToolTipText("What to turn into...");
+		ruleDocArea.setToolTipText("Description for this rule...");
 		ruleDocArea.setText(Rule.DEFAULT_DOCSTRING);
 		
 		ruleButtonWrapper.add(ruleUseRegexToggleButton, BorderLayout.WEST);
@@ -446,7 +446,7 @@ public class MainGUI extends JFrame implements ActionListener, KeyListener, Mous
 			edit.setActionCommand("action.rules.0." + num);
 			activate.setActionCommand("action.rules.6." + num);
 			delete.setActionCommand("action.rules.7." + num);
-			setActionCommand("action.rules.2." + num);
+			setActionCommand("action.rules.4." + num);
 			edit.setMargin(new Insets(0, 0, 0, 0));
 			activate.setMargin(new Insets(0, 0, 0, 0));
 			delete.setMargin(new Insets(0, 0, 0, 0));
