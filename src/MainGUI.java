@@ -525,6 +525,10 @@ public class MainGUI extends JFrame implements ActionListener, KeyListener, Mous
 		public boolean getAlt() { return alt; }
 		public int getKey() { return key; }
 		
+		public boolean isUnset() {
+			return (getKey() == 5000);
+		}
+		
 		@Override
 		public String toString() {
 			if (getKey() == 5000) return "";
