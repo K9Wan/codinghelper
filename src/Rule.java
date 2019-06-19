@@ -8,6 +8,13 @@ import java.util.Date;
  * @author ProDuct0339
  */
 public class Rule extends Macro implements Serializable {
+	
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 3026725069646278851L;
+
+	public static final String DEFAULT_DOCSTRING = "DocString for this rule not added";
 
 	public static ArrayList<Rule> ruleList = new ArrayList<Rule>(30);
 	
@@ -24,7 +31,7 @@ public class Rule extends Macro implements Serializable {
 	}
 	
 	public Rule(String name, String input, String output) {
-		this(name, input, output, false, "DcoString", true);
+		this(name, input, output, false, DEFAULT_DOCSTRING, true);
 	}
 
 	public Rule(String name, String input, String output, boolean useRegex, String helpDoc) {
@@ -78,6 +85,13 @@ public class Rule extends Macro implements Serializable {
 				"$1$2$3$4malloc($5*sizeof *$3 + $6*$5*sizeof **$3);\nfor(int i=0;i<$5;i++)\n{\n\t$3[i]$4($1 *)($3+$5)+i*n;\n}\n",
 				true,
 				"Use to allocate 2D array.\nExample: uint_8 ** matrix = malloc[6][cols];"));
+		ruleList.add(new Rule(
+				"clear DEBUG",
+				"#if.+DEBUG\\r?\\n([^#]*)#endif",
+				"",
+				true,
+				"Eliminates code for debugging.\nIt will work for ifdef DEBUG, if defined DEBUG, etc.",
+				false));
 	}
 	
 	public static String execute(String str) {

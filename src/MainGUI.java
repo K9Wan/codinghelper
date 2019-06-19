@@ -25,11 +25,13 @@ import java.io.OutputStreamWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Stack;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -41,6 +43,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.JToggleButton;
 import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
 import javax.swing.border.CompoundBorder;
@@ -50,6 +53,8 @@ import javax.swing.text.JTextComponent;
 public class MainGUI extends JFrame implements ActionListener, KeyListener, MouseListener {
 	
 	private static final long serialVersionUID = 1L;
+	
+	private static final String tempUntransActionCommand = "untrans.alternative";
 	
 	final JFileChooser fc = new JFileChooser();
 	
@@ -73,17 +78,19 @@ public class MainGUI extends JFrame implements ActionListener, KeyListener, Mous
 	private Key shortcut[][] = {
 			{null,null,null,null,null,null,null,null,null,null,null,null},
 			{null,null,null,null,null,null,null,null,null,null,null},
-			{null,null,null,null},
+			{null,null,null,null,null},
 			{null,null,null,null,null,null,null,null},
 			{null,null,null,null},
 			{null,null,null},
 			{null,null}
 		};
+	private Stack<String> history = new Stack<String>();
+	private String previous;
 	
 	private JPanel mainPane;
 		private JPanel transPane;
-			private JTextArea psuedoCArea;
-				private JScrollPane psuedoCScroll;
+			private TrackingJTextArea pseudoCArea;
+				private JScrollPane pseudoCScroll;
 			private JPanel transButtonWrapper;
 			private JTextArea normalCArea;
 				private JScrollPane normalCScroll;
@@ -96,6 +103,9 @@ public class MainGUI extends JFrame implements ActionListener, KeyListener, Mous
 					private JScrollPane ruleInScroll;
 				private JTextArea ruleOutArea;
 					private JScrollPane ruleOutScroll;
+				private JTextArea ruleDocArea;
+					private JScrollPane ruleDocScroll;
+				private JCheckBox ruleUseRegexToggleButton;
 	
 	public static void main(String args[]) {
 		MainGUI gui = new MainGUI();
@@ -116,14 +126,16 @@ public class MainGUI extends JFrame implements ActionListener, KeyListener, Mous
 		previousWindow = new Dimension(800, 600);
 		selectedRule = 0;
 		selectedText = "";
-		selectedArea = psuedoCArea;
+		selectedArea = pseudoCArea;
 		isSynced = false;
 		shift = false;
 		ctrl = false;
 		alt = false;
 		
 		toolBar = new JMenuBar();
-		rules = new ArrayList<Rule>();
+		rules = Rule.ruleList;
+		Rule.predefine();
+		history.push("");
 		shortcut[0][0] = new Key(true, true, false, KeyEvent.VK_N);
 		shortcut[0][1] = new Key(false, true, false, KeyEvent.VK_O);
 		shortcut[0][2] = new Key(true, true, false, KeyEvent.VK_O);
@@ -151,8 +163,9 @@ public class MainGUI extends JFrame implements ActionListener, KeyListener, Mous
 		
 		shortcut[2][0] = new Key(false, true, false, KeyEvent.VK_ENTER);
 		shortcut[2][1] = new Key(true, true, false, KeyEvent.VK_ENTER);
-		shortcut[2][2] = new Key(false, false, true, KeyEvent.VK_S);
-		shortcut[2][3] = new Key(false, false, false, KeyEvent.VK_F6);
+		shortcut[2][2] = new Key(false, true, false, KeyEvent.VK_E);
+		shortcut[2][3] = new Key(false, false, true, KeyEvent.VK_S);
+		shortcut[2][4] = new Key(false, false, false, KeyEvent.VK_F6);
 		
 		shortcut[3][0] = new Key(false, false, true, KeyEvent.VK_E);
 		shortcut[3][1] = new Key(false, false, true, KeyEvent.VK_ENTER);
@@ -177,8 +190,8 @@ public class MainGUI extends JFrame implements ActionListener, KeyListener, Mous
 		}
 		mainPane = new JPanel();
 			transPane = new JPanel();
-				psuedoCArea = new JTextArea(5, 5);
-					psuedoCScroll = new JScrollPane(psuedoCArea);
+				pseudoCArea = new TrackingJTextArea(5, 5);
+					pseudoCScroll = new JScrollPane(pseudoCArea);
 				transButtonWrapper = new JPanel();
 				normalCArea = new JTextArea(5, 5);
 					normalCScroll = new JScrollPane(normalCArea);
@@ -191,29 +204,31 @@ public class MainGUI extends JFrame implements ActionListener, KeyListener, Mous
 						ruleInScroll = new JScrollPane(ruleInArea);
 					ruleOutArea = new JTextArea(5, 5);
 						ruleOutScroll = new JScrollPane(ruleOutArea);
+					ruleDocArea = new JTextArea(5, 5);
+						ruleDocScroll = new JScrollPane(ruleDocArea);
 		
 		new Resize(this);
 		fc.setMultiSelectionEnabled(false);
 		fc.setCurrentDirectory(new File(System.getProperty("user.dir")));
-		psuedoCArea.addKeyListener(this);
+		pseudoCArea.addKeyListener(this);
 		normalCArea.addKeyListener(this);
 		ruleNameArea.addKeyListener(this);
 		ruleInArea.addKeyListener(this);
 		ruleOutArea.addKeyListener(this);
 		
-		psuedoCArea.addMouseListener(this);
+		pseudoCArea.addMouseListener(this);
 		normalCArea.addMouseListener(this);
 		ruleNameArea.addMouseListener(this);
 		ruleInArea.addMouseListener(this);
 		ruleOutArea.addMouseListener(this);
 		
-		psuedoCArea.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_H, KeyEvent.CTRL_DOWN_MASK, false), "none");
+		pseudoCArea.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_H, KeyEvent.CTRL_DOWN_MASK, false), "none");
 		normalCArea.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_H, KeyEvent.CTRL_DOWN_MASK, false), "none");
 		ruleNameArea.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_H, KeyEvent.CTRL_DOWN_MASK, false), "none");
 		ruleOutArea.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_H, KeyEvent.CTRL_DOWN_MASK, false), "none");
 		ruleInArea.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_H, KeyEvent.CTRL_DOWN_MASK, false), "none");
 		
-		setTitle("EasyC - Psuedo-C Transpiler");
+		setTitle("EasyC - Pseudo-C Transpiler");
 		setSize(800, 600);
 		setLayout(new BorderLayout());
 		setDefaultCloseOperation(EXIT_ON_CLOSE);
@@ -222,7 +237,7 @@ public class MainGUI extends JFrame implements ActionListener, KeyListener, Mous
 		JMenuItem tbitem[][] = {
 				{new JMenuItem("New File") ,new JMenuItem("Open File") ,new JMenuItem("Open File from URL...") ,new JMenuItem("Save File") ,new JMenuItem("Save File as...") ,new JMenuItem("New Rule") ,new JMenuItem("Open Rule") ,new JMenuItem("Open Rule from URL...") ,new JMenuItem("Save Rule") ,new JMenuItem("Save Rule as...") ,new JMenuItem("Restart Program") ,new JMenuItem("Exit Program")}, 
 				{new JMenuItem("Undo") ,new JMenuItem("Redo") ,new JMenuItem(new DefaultEditorKit.CutAction()) ,new JMenuItem(new DefaultEditorKit.CopyAction()) ,new JMenuItem(new DefaultEditorKit.PasteAction()) ,new JMenuItem("Delete") ,new JMenuItem("Select All") ,new JMenuItem("Find") ,new JMenuItem("Replace") ,new JMenuItem("Select Next") ,new JMenuItem("Select Previous")},
-				{new JMenuItem("Transpile") ,new JMenuItem("Reverse Transpile") ,new JMenuItem("Sync/Desync..."), new JMenuItem("Swap Texts")},
+				{new JMenuItem("Transpile") ,new JMenuItem("Reverse Transpile"), new JMenuItem("Expand Macros") ,new JMenuItem("Sync/Desync..."), new JMenuItem("Swap Texts")},
 				{new JMenuItem("Edit Selected Rule") ,new JMenuItem("Confirm Selected Rule") ,new JMenuItem("Select First Rule"),new JMenuItem("Select Last Rule"), new JMenuItem("Select Next Rule") ,new JMenuItem("Select Previous Rule"), new JMenuItem("Activate/Deactivate Selected Rule") ,new JMenuItem("Delete Selected Rule")},
 				{new JMenuItem("Shortcuts..."), new JMenuItem("Coloring"), new JMenuItem("Fonts"), new JMenuItem("Features")},
 				{new JMenuItem("Show/Hide Rule Tab"), new JMenuItem("Fullscreen/Windowed"), new JMenuItem("Show/Hide Toolbar")},
@@ -253,39 +268,44 @@ public class MainGUI extends JFrame implements ActionListener, KeyListener, Mous
 		mainPane.setLayout(new BoxLayout(mainPane, BoxLayout.LINE_AXIS));
 		transPane.setLayout(new BoxLayout(transPane, BoxLayout.PAGE_AXIS));
 		
-		psuedoCScroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-		psuedoCScroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+		pseudoCScroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+		pseudoCScroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
 		normalCScroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 		normalCScroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
 		
 		transButtonWrapper.setLayout(new FlowLayout());
 		
-		updateRatios(mainPane, psuedoCScroll, normalCScroll, transButtonWrapper);
+		updateRatios(mainPane, pseudoCScroll, normalCScroll, transButtonWrapper);
 		updateShows();
 		
 		JButton transButton = new JButton("▼");
 		JButton untransButton = new JButton("△");
+		JButton expandButton = new JButton("⇩");
 		JButton swapButton = new JButton("↑↓");
 		
 		transButton.addActionListener(this);
 		untransButton.addActionListener(this);
+		expandButton.addActionListener(this);
 		swapButton.addActionListener(this);
 		transButton.setActionCommand("action.transpiler.0");
 		untransButton.setActionCommand("action.transpiler.1");
-		swapButton.setActionCommand("action.transpiler.3");
+		expandButton.setActionCommand("action.transpiler.2");
+		swapButton.setActionCommand("action.transpiler.4");
 		transButton.setToolTipText("trans");
 		untransButton.setToolTipText("untrans");
+		expandButton.setToolTipText("expand: by replacing #define with #expand");
 		swapButton.setToolTipText("swap");
 		
 		transButtonWrapper.add(transButton);
 		transButtonWrapper.add(untransButton);
+		transButtonWrapper.add(expandButton);
 		transButtonWrapper.add(swapButton);
 		
-		psuedoCArea.setToolTipText("EasyC code goes here...");
+		pseudoCArea.setToolTipText("EasyC code goes here...");
 		normalCArea.setToolTipText("ordinary C code goes here...");
 		
 		transPane.add(Box.createRigidArea(new Dimension(5, 5)));
-		transPane.add(psuedoCScroll);
+		transPane.add(pseudoCScroll);
 		transPane.add(Box.createVerticalGlue());
 		transPane.add(Box.createRigidArea(new Dimension(5, 5)));
 		transPane.add(transButtonWrapper);
@@ -307,11 +327,18 @@ public class MainGUI extends JFrame implements ActionListener, KeyListener, Mous
 		ruleConfirmButton.setActionCommand("action.rules.1");
 		ruleConfirmButton.setToolTipText("rule confirm");
 		
+		//ruleUseRegexToggleButton = new JToggleButton("This uses regex");
+		ruleUseRegexToggleButton = new JCheckBox("This uses regex");
+		ruleUseRegexToggleButton.setToolTipText("check this if your rule uses regular expression");
+		
 		ruleNameArea.setToolTipText("Rule name here");
 		ruleInArea.setToolTipText("What to detect here");
 		ruleOutArea.setToolTipText("What to turn into here");
+		ruleDocArea.setToolTipText("DocString for this rule here");
+		ruleDocArea.setText(Rule.DEFAULT_DOCSTRING);
 		
-		ruleButtonWrapper.add(ruleConfirmButton);
+		ruleButtonWrapper.add(ruleUseRegexToggleButton, BorderLayout.WEST);
+		ruleButtonWrapper.add(ruleConfirmButton, BorderLayout.EAST);
 		ruleInScroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 		ruleInScroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
 		ruleOutScroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
@@ -322,10 +349,13 @@ public class MainGUI extends JFrame implements ActionListener, KeyListener, Mous
 		ruleEditorPane.setLayout(new BoxLayout(ruleEditorPane, BoxLayout.PAGE_AXIS));
 		ruleEditorPane.add(Box.createRigidArea(new Dimension(5, 5)));
 		ruleEditorPane.add(ruleNameArea);
+		ruleEditorPane.add(Box.createRigidArea(new Dimension(2, 2)));
 		ruleEditorPane.add(Box.createVerticalGlue());
 		ruleEditorPane.add(ruleInScroll);
 		ruleEditorPane.add(Box.createVerticalGlue());
 		ruleEditorPane.add(ruleOutScroll);
+		ruleEditorPane.add(Box.createRigidArea(new Dimension(2, 2)));
+		ruleEditorPane.add(ruleDocScroll);
 		ruleEditorPane.add(Box.createRigidArea(new Dimension(5, 5)));
 		
 		ruleEditorWrapper.add(ruleEditorPane, BorderLayout.CENTER);
@@ -346,18 +376,19 @@ public class MainGUI extends JFrame implements ActionListener, KeyListener, Mous
 		add(mainPane, BorderLayout.CENTER);
 	}
 	
-	private void updateRatios(JPanel mainPane, JScrollPane psuedoCScroll, JScrollPane normalCScroll, JPanel transButtonWrapper) {
+	private void updateRatios(JPanel mainPane, JScrollPane pseudoCScroll, JScrollPane normalCScroll, JPanel transButtonWrapper) {
 		int newWidth = (int)(rulesActive ? getBounds().width * 0.6 : getBounds().width );
 		int newHeight = (int)(toolBarActive ? getBounds().height - toolBar.getHeight() : getBounds().height);
 		mainPane.setPreferredSize(getDimentionRatio(newWidth, newHeight, 1, 1));
-		psuedoCScroll.setPreferredSize(getDimentionRatio(newWidth, newHeight, 0.8, 0.4));
+		pseudoCScroll.setPreferredSize(getDimentionRatio(newWidth, newHeight, 0.8, 0.4));
 		normalCScroll.setPreferredSize(getDimentionRatio(newWidth, newHeight, 0.8, 0.4));
 		transButtonWrapper.setPreferredSize(getDimentionRatio(newWidth, newHeight, 0.5, 0.1));
 		if (rulesActive) {
 			ruleInScroll.setPreferredSize(getDimentionRatio(getBounds().width - newWidth, newHeight, 0.8, 0.2));
 			ruleOutScroll.setPreferredSize(getDimentionRatio(getBounds().width - newWidth, newHeight, 0.8, 0.2));
-			ruleListScroll.setPreferredSize(getDimentionRatio(getBounds().width - newWidth, newHeight, 0.8, 0.5));
-			ruleEditorWrapper.setPreferredSize(getDimentionRatio(getBounds().width - newWidth, newHeight, 0.8, 0.5));
+			ruleDocScroll.setPreferredSize(getDimentionRatio(getBounds().width - newWidth, newHeight, 0.8, 0.2));
+			ruleListScroll.setPreferredSize(getDimentionRatio(getBounds().width - newWidth, newHeight, 0.8, 0.3));
+			ruleEditorWrapper.setPreferredSize(getDimentionRatio(getBounds().width - newWidth, newHeight, 0.8, 0.7));
 		}
 	}
 	
@@ -379,6 +410,7 @@ public class MainGUI extends JFrame implements ActionListener, KeyListener, Mous
 			rulesIncluded = true;
 		}
 		SwingUtilities.updateComponentTreeUI(this);
+		updateRules();
 	}
 	
 	@SuppressWarnings("serial")
@@ -402,6 +434,10 @@ public class MainGUI extends JFrame implements ActionListener, KeyListener, Mous
 			JButton edit = new JButton("E");
 			JButton activate = new JButton("!");
 			JButton delete = new JButton("━");
+			
+			edit.setToolTipText("Edit this rule");
+			activate.setToolTipText("Toggle enable/disable");
+			delete.setToolTipText("Delete this rule");
 			
 			edit.addActionListener(comp);
 			activate.addActionListener(comp);
@@ -435,6 +471,8 @@ public class MainGUI extends JFrame implements ActionListener, KeyListener, Mous
 			delete.setPreferredSize(new Dimension(20, 30));
 			
 			setPreferredSize(new Dimension(100, 30));
+			
+			setMaximumSize(new Dimension(rulePane.getMaximumSize().width, 50));
 			
 			JPanel buttons = new JPanel(new GridLayout(1, 4));
 			buttons.setAlignmentY(RIGHT_ALIGNMENT);
@@ -500,6 +538,7 @@ public class MainGUI extends JFrame implements ActionListener, KeyListener, Mous
 	
 	private void updateRules() {
 		ruleListWrapper.setLayout(new GridLayout(rules.size(), 1));
+		ruleListWrapper.setLayout(new BoxLayout(ruleListWrapper, BoxLayout.Y_AXIS));
 		ruleListWrapper.setPreferredSize(new Dimension(ruleListScroll.getWidth(), Math.max(50 * rules.size(), ruleListScroll.getHeight())));
 		int i = 0; JRule temp;
 		ruleListWrapper.removeAll();
@@ -517,7 +556,7 @@ public class MainGUI extends JFrame implements ActionListener, KeyListener, Mous
 	
 	@Override
 	public void validate() {
-		updateRatios(mainPane, psuedoCScroll, normalCScroll, transButtonWrapper);
+		updateRatios(mainPane, pseudoCScroll, normalCScroll, transButtonWrapper);
 		super.validate();
 	}
 
@@ -525,6 +564,12 @@ public class MainGUI extends JFrame implements ActionListener, KeyListener, Mous
 	public void actionPerformed(ActionEvent e) {
 		String action = e.getActionCommand();
 		if (action == null) return;
+		if (action.equals(tempUntransActionCommand)) {
+			if (JOptionPane.showConfirmDialog(this, "This feature is not implemented.\nDo you want to copy text from below area to above area?", "NotImpemented", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
+				pseudoCArea.setText(normalCArea.getText());
+			}
+			return;
+		}
 		String actions[] = action.split("\\.");
 		int subaction = -1;
 		try {
@@ -539,7 +584,7 @@ public class MainGUI extends JFrame implements ActionListener, KeyListener, Mous
 			switch (subaction) {
 			case 0:
 				if (JOptionPane.showConfirmDialog(this, "This action will overwrite your transpiler.\nAre you sure?", "New File", JOptionPane.WARNING_MESSAGE) == JOptionPane.YES_OPTION) {
-					psuedoCArea.setText("");
+					pseudoCArea.setText("");
 					normalCArea.setText("");
 				}
 				break;
@@ -554,7 +599,7 @@ public class MainGUI extends JFrame implements ActionListener, KeyListener, Mous
 							while (stream.available() > 0) txt += (char)stream.read();
 							String extension = file.getName().split("\\.")[file.getName().split("\\.").length - 1];
 							if (extension.equals("c")) normalCArea.setText(txt);
-							if (extension.equals("easyc") || extension.equals("txt")) psuedoCArea.setText(txt);
+							if (extension.equals("easyc") || extension.equals("txt")) pseudoCArea.setText(txt);
 							stream.close();
 						} catch (FileNotFoundException e1) {
 							JOptionPane.showMessageDialog(this, "The file you selected does not exist.", "File Error", JOptionPane.ERROR_MESSAGE);
@@ -577,7 +622,7 @@ public class MainGUI extends JFrame implements ActionListener, KeyListener, Mous
 		            while ((line = in.readLine()) != null) {
 		            	txt += line;
 		            }
-		            psuedoCArea.setText(txt);
+		            pseudoCArea.setText(txt);
 		            in.close();
 				} catch (MalformedURLException e1) {
 					JOptionPane.showMessageDialog(this, "The URL you typed won't connect. check for any typos.", "URL Error", JOptionPane.ERROR_MESSAGE);
@@ -622,6 +667,7 @@ public class MainGUI extends JFrame implements ActionListener, KeyListener, Mous
 					ruleNameArea.setText("");
 					ruleInArea.setText("");
 					ruleOutArea.setText("");
+					ruleDocArea.setText("");
 				}
 				break;
 			case 6:
@@ -633,6 +679,7 @@ public class MainGUI extends JFrame implements ActionListener, KeyListener, Mous
 							ObjectInputStream stream = new ObjectInputStream(new FileInputStream(file));
 							while (stream.available() > 0) rules.add((Rule)stream.readObject());
 							stream.close();
+							updateRules();
 						} catch (FileNotFoundException e1) {
 							JOptionPane.showMessageDialog(this, "The file you selected does not exist.", "File Error", JOptionPane.ERROR_MESSAGE);
 							e1.printStackTrace();
@@ -704,9 +751,10 @@ public class MainGUI extends JFrame implements ActionListener, KeyListener, Mous
 				}
 				break;
 			case 10:
-				if (JOptionPane.showConfirmDialog(this, "TAre you sure?", "Restart Program", JOptionPane.WARNING_MESSAGE) == JOptionPane.YES_OPTION) {
+				if (JOptionPane.showConfirmDialog(this, "Are you sure?", "Restart Program", JOptionPane.WARNING_MESSAGE) == JOptionPane.YES_OPTION) {
 					remove(toolBar);
 					remove(mainPane);
+					rules.clear();
 					initiate();
 					revalidate();
 				}
@@ -723,9 +771,27 @@ public class MainGUI extends JFrame implements ActionListener, KeyListener, Mous
 			break;
 		case "edit":
 			switch (subaction) {
+			case 0:
+				previous = pseudoCArea.getText();
+				try {
+					pseudoCArea.setTextUntracking(history.pop());
+				}catch (java.util.EmptyStackException emptyStackE) {
+					pseudoCArea.setTextUntracking("");
+				}
+				break;
+			case 1:
+				//MacroConvertor.p("redo"+previous);
+				history.push(pseudoCArea.getText());
+				if (!previous.isEmpty()) {
+					pseudoCArea.setTextUntracking(previous);
+					previous = "";
+				}
+				break;
 			case 2:
 			case 3:
 			case 4:
+				//MacroConvertor.p(pseudoCArea.getText());
+				history.push(pseudoCArea.getText());
 				break;
 			case 5:
 				selectedArea.replaceSelection("");
@@ -747,11 +813,14 @@ public class MainGUI extends JFrame implements ActionListener, KeyListener, Mous
 				untranspile();
 				break;
 			case 2:
-				isSynced = !isSynced;
+				expand();
 				break;
 			case 3:
-				String temp = psuedoCArea.getText();
-				psuedoCArea.setText(normalCArea.getText());
+				isSynced = !isSynced;
+				break;
+			case 4:
+				String temp = pseudoCArea.getText();
+				pseudoCArea.setText(normalCArea.getText());
 				normalCArea.setText(temp);
 				break;
 			default:
@@ -760,32 +829,36 @@ public class MainGUI extends JFrame implements ActionListener, KeyListener, Mous
 			}
 			break;
 		case "rules":
+			int listnum = 0;
 			switch (subaction) {
 			case 0:
 				if (rules.isEmpty()) break;
 				try {
-					int listnum = Integer.parseInt(actions[3]);
-					ruleNameArea.setText(rules.get(listnum).getName());
-					ruleInArea.setText(rules.get(listnum).getInput());
-					ruleOutArea.setText(rules.get(listnum).getOutput());
+					listnum = Integer.parseInt(actions[3]);
 				} catch (NumberFormatException err) {
 					System.err.println("Unrecognised Rule number Recieved: " + actions[3]);
 				}
+				ruleNameArea.setText(rules.get(listnum).getName());
+				ruleInArea.setText(rules.get(listnum).getInput());
+				ruleOutArea.setText(rules.get(listnum).getOutput());
+				ruleDocArea.setText(rules.get(listnum).getHelpDoc());
+				ruleUseRegexToggleButton.setSelected(rules.get(listnum).useRegex);
 				break;
 			case 1:
 				if (ruleNameArea.getText().trim().isEmpty()) {
 					JOptionPane.showMessageDialog(this, "Name is empty!", "Confirm Rule", JOptionPane.ERROR_MESSAGE);
 					break;
 				}
-				else if (ruleInArea.getText().trim().isEmpty()) {
+				else if (ruleInArea.getText()/*/.trim()/*/.isEmpty()) {
 					JOptionPane.showMessageDialog(this, "Input is empty!", "Confirm Rule", JOptionPane.ERROR_MESSAGE);
 					break;
-				}
+				}/*/
 				else if (ruleOutArea.getText().trim().isEmpty()) {
 					JOptionPane.showMessageDialog(this, "Output is empty!", "Confirm Rule", JOptionPane.ERROR_MESSAGE);
 					break;
-				}
-				Rule temp = new Rule(ruleNameArea.getText(), ruleInArea.getText(), ruleOutArea.getText());
+				}/*/
+				boolean useRegex = ruleUseRegexToggleButton.isSelected();
+				Rule temp = new Rule(ruleNameArea.getText(), ruleInArea.getText(), ruleOutArea.getText(), useRegex, ruleDocArea.getText());
 				i = 0;
 				for (Rule d: rules) {
 					if (d.sameName(ruleNameArea.getText())) {
@@ -798,6 +871,11 @@ public class MainGUI extends JFrame implements ActionListener, KeyListener, Mous
 				if (i == rules.size()) {
 					selectedRule = rules.size();
 					rules.add(temp);
+				}else {
+					int choice = JOptionPane.showConfirmDialog(this, "Are you sure to edit this rule?", "Edit Rule", JOptionPane.OK_CANCEL_OPTION);
+					if (choice == JOptionPane.OK_OPTION) {
+						rules.set(i, temp);
+					}
 				}
 				updateRules();
 				break;
@@ -835,7 +913,7 @@ public class MainGUI extends JFrame implements ActionListener, KeyListener, Mous
 			case 6:
 				if (rules.isEmpty()) break;
 				try {
-					int listnum = Integer.parseInt(actions[3]);
+					listnum = Integer.parseInt(actions[3]);
 					rules.get(listnum).setActive(!(rules.get(listnum).getActive()));
 				} catch (NumberFormatException err) {
 					System.err.println("Unrecognised Rule number Recieved: " + actions[3]);
@@ -874,7 +952,7 @@ public class MainGUI extends JFrame implements ActionListener, KeyListener, Mous
 			case 0:
 				rulesActive = !rulesActive;
 				updateShows();
-				updateRatios(mainPane, psuedoCScroll, normalCScroll, transButtonWrapper);
+				updateRatios(mainPane, pseudoCScroll, normalCScroll, transButtonWrapper);
 				break;
 			case 1:
 				if (getExtendedState() == JFrame.MAXIMIZED_BOTH) {
@@ -890,7 +968,7 @@ public class MainGUI extends JFrame implements ActionListener, KeyListener, Mous
 			case 2:
 				toolBarActive = !toolBarActive;
 				updateShows();
-				updateRatios(mainPane, psuedoCScroll, normalCScroll, transButtonWrapper);
+				updateRatios(mainPane, pseudoCScroll, normalCScroll, transButtonWrapper);
 				break;
 			default:
 				System.err.println("Unrecognised " + actions[1] + " subaction Recieved: " + action);
@@ -933,6 +1011,22 @@ public class MainGUI extends JFrame implements ActionListener, KeyListener, Mous
 			i++;
 		}/*/
 		// something related to undo/redo
+		if (e.getKeyCode() == KeyEvent.VK_BACK_SPACE) {
+			//MacroConvertor.p(pseudoCArea.getText());
+			history.push(pseudoCArea.getText());
+		}
+		if (e.isControlDown()) {
+			switch(e.getKeyCode()) {
+			case KeyEvent.VK_X:
+			case KeyEvent.VK_C:
+			case KeyEvent.VK_V:
+				//MacroConvertor.p(pseudoCArea.getText());
+				history.push(pseudoCArea.getText());
+				break;
+			default:
+				break;
+			}
+		}
 	}
 
 	@Override
@@ -941,12 +1035,15 @@ public class MainGUI extends JFrame implements ActionListener, KeyListener, Mous
 		else if (e.getKeyCode() == KeyEvent.VK_CONTROL) ctrl = false;
 		else if (e.getKeyCode() == KeyEvent.VK_ALT) alt = false;/*/
 		// something related to undo/redo
+		if (e.getKeyCode() == KeyEvent.VK_BACK_SPACE) {
+			MacroConvertor.p(pseudoCArea.getText());
+		}
 	}
 
 	@Override
 	public void keyTyped(KeyEvent e) {
 		if (isSynced) {
-			if (e.getComponent() == psuedoCArea) transpile();
+			if (e.getComponent() == pseudoCArea) transpile();
 			else if (e.getComponent() == normalCArea) untranspile();
 		}
 	}
@@ -969,9 +1066,31 @@ public class MainGUI extends JFrame implements ActionListener, KeyListener, Mous
 	
 	private void transpile() {
 		// transpiler here
+		normalCArea.setText(Rule.execute(pseudoCArea.getText()));
 	}
 	
 	private void untranspile() {
 		// reverse transpiler here
+		this.actionPerformed(new ActionEvent(this, ActionEvent.ACTION_PERFORMED, tempUntransActionCommand));
+	}
+	
+	private void expand() {
+		normalCArea.setText(MacroConvertor.expand(pseudoCArea.getText()));
+	}
+	
+	private class TrackingJTextArea extends JTextArea{
+		public TrackingJTextArea(int i, int j) {
+			super(i, j);
+		}
+
+		@Override
+		public void setText(String t) {
+			history.push(this.getText());
+			super.setText(t);
+		}
+		
+		public void setTextUntracking(String t) {
+			super.setText(t);
+		}
 	}
 }

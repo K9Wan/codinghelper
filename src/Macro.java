@@ -115,6 +115,13 @@ public class Macro {
 				"$1$2$3$4malloc($5*sizeof *$3 + $6*$5*sizeof **$3);\nfor(int i=0;i<$5;i++)\n{\n\t$3[i]$4($1 *)($3+$5)+i*n;\n}\n",
 				true,
 				"Use to allocate 2D array.\nExample: uint_8 ** matrix = malloc[6][cols];"));
+		macroList.add(new Macro(
+				"clear DEBUG",
+				"#if.+DEBUG\\r?\\n([^#]*)#endif",
+				"",
+				true,
+				"Eliminates code for debugging.\nIt will work for ifdef DEBUG, if defined DEBUG, etc.",
+				false));
 	}
 	
 	public static String execute(String str) {

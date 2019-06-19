@@ -41,6 +41,10 @@ public class MacroConvertor {
 	}
 
 	public static String expand(String str) {
+		try {
+		str=str.replaceAll("#expand (\\w+)(\\r?\\n)", "#expand $1 $2");
+		str=str.replaceAll("#expand (\\w+\\([^\\)]+\\))(\\r?\\n)", "#expand $1 $2");
+		//above two lines makes macro have trailing ' ' to match regex when macro is defined to empty and no trailing ' '; 
 		ArrayList<MacroConvertor> expandList = new ArrayList<MacroConvertor>(30);
 		String[] list = str.split("#expand");
 		ArrayList<String> stringList = new ArrayList<String>(30);
@@ -50,13 +54,13 @@ public class MacroConvertor {
 			stringList.set(i, "#expand"+stringList.get(i));
 		}//now stringList contains strings each starting with #expand
 		
-		String s1 = "#expand (\\w+) ([^\\r\\n]+)\\r?\\n";
+		String s1 = "#expand (\\w+) ([^\\r\\n]*)\\r?\\n";
 		Pattern p1 = Pattern.compile(s1);	//no args;
 		//$1:name, $2:firstline - may have trailing backslash if has multiline;
-		String s2 = "#expand (\\w+)\\(([^\\)]+)\\) ([^\\r\\n]+)\\r?\\n";
+		String s2 = "#expand (\\w+)\\(([^\\)]+)\\) ([^\\r\\n]*)\\r?\\n";
 		Pattern p2 = Pattern.compile(s2);	//has args;
 		//$1:name, $2:arg,arg,... , $3:firstline - may have trailing backslash if has multiline;
-		String s3 = "#expand (\\w+)(\\(([^\\)]+)\\))? ([^\\r\\n]+)\\\\\\r?\\n";
+		String s3 = "#expand (\\w+)(\\(([^\\)]+)\\))? ([^\\r\\n]*)\\\\\\r?\\n";
 		Pattern p3 = Pattern.compile(s3);		//multi lines;
 		//$1:name, $2:(arg,arg,...) (or undefined), $3:arg,arg,... (or undefined), $4:firstline
 		String s4 = "\\\\\\r?\\n([^\\r\\n\\\\]+)";
@@ -134,6 +138,9 @@ public class MacroConvertor {
 			str = macro.convert(str);
 		}		//expand each macro
 		//p(str);
+		}catch (java.lang.IllegalStateException e1){
+			e1.printStackTrace();
+		}
 		return str;
 	}
 	

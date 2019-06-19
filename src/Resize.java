@@ -1,4 +1,3 @@
-package com.prod.project;
 
 import java.awt.Component;
 import java.awt.Cursor;
