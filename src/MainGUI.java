@@ -496,8 +496,10 @@ public class MainGUI extends JFrame implements ActionListener, KeyListener, Mous
 		private boolean alt;
 		private int key;
 		
+		private static final int KEY_UNDEFINED = 5000;
+		
 		public Key() {
-			this(false, false, false, 5000);
+			this(false, false, false, KEY_UNDEFINED);
 		}
 		
 		public Key(int key) {
@@ -526,12 +528,12 @@ public class MainGUI extends JFrame implements ActionListener, KeyListener, Mous
 		public int getKey() { return key; }
 		
 		public boolean isUnset() {
-			return (getKey() == 5000);
+			return (getKey() == KEY_UNDEFINED);
 		}
 		
 		@Override
 		public String toString() {
-			if (getKey() == 5000) return "";
+			if (getKey() == KEY_UNDEFINED) return "";
 			return "(" + (getCtrl() ? "Ctrl+" : "") + (getShift() ? "Shift+" : "") + (getAlt() ? "Alt+" : "") + KeyEvent.getKeyText(getKey()) + ")";
 		}
 		
