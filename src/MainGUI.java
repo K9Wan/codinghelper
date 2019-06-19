@@ -248,10 +248,10 @@ public class MainGUI extends JFrame implements ActionListener, KeyListener, Mous
 			j = 0;
 			for (JMenuItem e: list) {
 				e.addActionListener(this);
-				e.setText(e.getActionCommand() + ((shortcut[i][j] == null) ? "" : " " + shortcut[i][j].toString()));
+				e.setText(e.getActionCommand());
 				e.setActionCommand("action." + tb[i].getText().toLowerCase() + "." + j);
 				tb[i].add(e);
-				e.setAccelerator(shortcut[i][j].toKeyStroke());
+				if (!shortcut[i][j].isUnset()) e.setAccelerator(shortcut[i][j].toKeyStroke());
 				j++;
 			}
 			tb[i].addActionListener(this);
